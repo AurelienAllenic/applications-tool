@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-surface-2: #1e2530;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-muted: #7d8590;
+
+  --color-coral: #ff6b6b;
+  --color-coral-dim: rgba(255, 107, 107, 0.12);
+  --color-teal: #2dd4bf;
+  --color-teal-dim: rgba(45, 212, 191, 0.12);
+  --color-amber: #fbbf24;
+  --color-amber-dim: rgba(251, 191, 36, 0.12);
+  --color-blue: #60a5fa;
+  --color-blue-dim: rgba(96, 165, 250, 0.12);
+  --color-purple: #a78bfa;
+  --color-purple-dim: rgba(167, 139, 250, 0.12);
+  --color-green: #4ade80;
+  --color-green-dim: rgba(74, 222, 128, 0.12);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* overflow-x: clip empêche le scroll viewport horizontal
+     SANS créer de BFC ni bloquer les scroll containers enfants */
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background-color: #0d1117;
+  color: #e6edf3;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  /* Pas d'overflow-x sur body — laisser les scroll containers enfants
+     (ex: tableau) fonctionner librement */
+}
+
+/* Prevent inputs from overflowing on iOS */
+input, select, textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #161b22;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.card-hover {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  border-color: #30363d;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-1px);
+}
+
+input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; /* prevents iOS auto-zoom on focus */
+}
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS safe area for FAB */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
