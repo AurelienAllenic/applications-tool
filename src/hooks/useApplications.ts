@@ -34,6 +34,10 @@ function saveToStorage(apps: Application[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(apps))
 }
 
+export type ImportResult =
+  | { ok: true; count: number }
+  | { ok: false; reason: string }
+
 export function useApplications() {
   const [applications, setApplications] = useState<Application[]>(loadFromStorage)
 
@@ -66,7 +70,11 @@ export function useApplications() {
     setApplications(prev => prev.filter(app => app.id !== id))
   }, [])
 
-  const exportData = useCallback(() => {
+  const clearAll = useCallback(() => {
+    setApplications([])
+  }, [])
+
+  const exportData = useCallback((): number => {
     const blob = new Blob([JSON.stringify(applications, null, 2)], {
       type: 'application/json',
     })
@@ -76,21 +84,41 @@ export function useApplications() {
     a.download = `jobtracker_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
+    return applications.length
   }, [applications])
 
-  const importData = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target?.result as string)
-        if (Array.isArray(data)) {
-          setApplications(data)
+  // Retourne une Promise<ImportResult> pour pouvoir afficher un toast depuis App
+  const importData = useCallback((file: File): Promise<ImportResult> => {
+    return new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const data = JSON.parse(e.target?.result as string)
+          if (!Array.isArray(data)) {
+            resolve({ ok: false, reason: 'Le fichier ne contient pas un tableau de candidatures.' })
+            return
+          }
+          // Validation minimale de chaque entrée
+          const valid = data.every(
+            (item: unknown) =>
+              typeof item === 'object' &&
+              item !== null &&
+              'id' in item &&
+              'entreprise' in item
+          )
+          if (!valid) {
+            resolve({ ok: false, reason: 'Le format des données est invalide.' })
+            return
+          }
+          setApplications(data as Application[])
+          resolve({ ok: true, count: data.length })
+        } catch {
+          resolve({ ok: false, reason: 'Fichier JSON illisible ou corrompu.' })
         }
-      } catch {
-        alert('Fichier JSON invalide.')
       }
-    }
-    reader.readAsText(file)
+      reader.onerror = () => resolve({ ok: false, reason: 'Impossible de lire le fichier.' })
+      reader.readAsText(file)
+    })
   }, [])
 
   return {
@@ -99,6 +127,7 @@ export function useApplications() {
     updateApplication,
     updateStatus,
     deleteApplication,
+    clearAll,
     exportData,
     importData,
   }

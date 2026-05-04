@@ -1,11 +1,12 @@
 import { useState, useMemo, useRef } from 'react'
-import { Plus, Download, Upload, Briefcase, X } from 'lucide-react'
+import { Plus, Download, Upload, Briefcase, X, Trash2 } from 'lucide-react'
 import { useApplications } from './hooks/useApplications'
 import { StatsDashboard } from './components/StatsDashboard'
 import { ApplicationTable } from './components/ApplicationTable'
 import { ApplicationCard } from './components/ApplicationCard'
 import { ApplicationModal } from './components/ApplicationModal'
 import { FilterBar, SortKey, SortDir } from './components/FilterBar'
+import { ToastContainer, useToast } from './components/Toast'
 import { Application, Status } from './types'
 
 export default function App() {
@@ -15,13 +16,17 @@ export default function App() {
     updateApplication,
     updateStatus,
     deleteApplication,
+    clearAll,
     exportData,
     importData,
   } = useApplications()
 
+  const { toasts, removeToast, toast } = useToast()
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editingApp, setEditingApp] = useState<Application | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [clearConfirm, setClearConfirm] = useState(false)
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Status | ''>('')
@@ -91,7 +96,34 @@ export default function App() {
     if (deleteConfirm) {
       deleteApplication(deleteConfirm)
       setDeleteConfirm(null)
+      toast.info('Candidature supprimée')
     }
+  }
+
+  const handleExport = () => {
+    const count = exportData()
+    toast.success(
+      'Export réussi',
+      `${count} candidature${count > 1 ? 's' : ''} exportée${count > 1 ? 's' : ''} · jobtracker_${new Date().toISOString().split('T')[0]}.json`
+    )
+  }
+
+  const handleImport = async (file: File) => {
+    const result = await importData(file)
+    if (result.ok) {
+      toast.success(
+        'Import réussi',
+        `${result.count} candidature${result.count > 1 ? 's' : ''} restaurée${result.count > 1 ? 's' : ''}`
+      )
+    } else {
+      toast.error('Import échoué', result.reason)
+    }
+  }
+
+  const handleClearAll = () => {
+    clearAll()
+    setClearConfirm(false)
+    toast.info('Données effacées', 'Vous pouvez maintenant importer un fichier.')
   }
 
   const appToDelete = applications.find(a => a.id === deleteConfirm)
@@ -130,23 +162,36 @@ export default function App() {
               className="hidden"
               onChange={e => {
                 const file = e.target.files?.[0]
-                if (file) importData(file)
+                if (file) handleImport(file)
                 e.target.value = ''
               }}
             />
-            {/* Import / Export — icône seule sur mobile */}
+
+            {/* Vider tout — icône seule sur mobile */}
+            <button
+              onClick={() => setClearConfirm(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium text-[#7d8590] hover:text-red-400 hover:bg-red-400/5 border border-[#30363d] hover:border-red-400/20 transition-colors"
+              title="Vider toutes les données"
+            >
+              <Trash2 size={14} />
+              <span className="hidden sm:inline text-xs">Vider</span>
+            </button>
+
+            {/* Import */}
             <button
               onClick={() => importRef.current?.click()}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5 border border-[#30363d] transition-colors"
-              title="Importer JSON"
+              title="Importer un fichier JSON"
             >
               <Upload size={14} />
               <span className="hidden sm:inline text-xs">Importer</span>
             </button>
+
+            {/* Export */}
             <button
-              onClick={exportData}
+              onClick={handleExport}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5 border border-[#30363d] transition-colors"
-              title="Exporter JSON"
+              title="Exporter en JSON"
             >
               <Download size={14} />
               <span className="hidden sm:inline text-xs">Exporter</span>
@@ -278,6 +323,65 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ── Vider tout — confirmation ── */}
+      {clearConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="animate-scale-in bg-[#161b22] border border-[#30363d] rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl mx-4">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-[#e6edf3] text-base" style={{ fontFamily: 'Syne, sans-serif' }}>
+                  Vider toutes les données ?
+                </h3>
+                <p className="text-xs text-[#7d8590] mt-1">
+                  {applications.length} candidature{applications.length > 1 ? 's' : ''} seront supprimées
+                </p>
+              </div>
+              <button
+                onClick={() => setClearConfirm(false)}
+                className="p-1.5 rounded-lg text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5 transition-colors"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <div className="bg-[#0d1117] border border-[#30363d] rounded-xl p-3 mb-5">
+              <p className="text-xs text-[#7d8590] leading-relaxed">
+                💡 <span className="text-[#e6edf3] font-medium">Conseil :</span> Exporte d'abord tes données avant de vider,
+                pour pouvoir les réimporter ensuite depuis un autre navigateur ou appareil.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setClearConfirm(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  handleExport()
+                  setTimeout(() => handleClearAll(), 300)
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-[#30363d] text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5 transition-colors"
+              >
+                Exporter puis vider
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition-all active:scale-95"
+              >
+                Vider
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toasts ── */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }
