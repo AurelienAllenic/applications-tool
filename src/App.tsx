@@ -9,6 +9,13 @@ import { FilterBar, SortKey, SortDir } from './components/FilterBar'
 import { ToastContainer, useToast } from './components/Toast'
 import { Application, Status } from './types'
 
+/** Première valeur numérique trouvée — utile pour une fourchette type « 45-50 » ou « 45 à 50 ». */
+function salarySortValue(raw: string): number {
+  const matches = raw.match(/\d+(?:[.,]\d+)?/g)
+  if (!matches?.length) return 0
+  return parseFloat(matches[0].replace(',', '.'))
+}
+
 export default function App() {
   const {
     applications,
@@ -63,8 +70,8 @@ export default function App() {
       let av: string | number = a[sortKey] ?? ''
       let bv: string | number = b[sortKey] ?? ''
       if (sortKey === 'salaire') {
-        av = parseFloat(a.salaire) || 0
-        bv = parseFloat(b.salaire) || 0
+        av = salarySortValue(a.salaire)
+        bv = salarySortValue(b.salaire)
       }
       if (av < bv) return sortDir === 'asc' ? -1 : 1
       if (av > bv) return sortDir === 'asc' ? 1 : -1

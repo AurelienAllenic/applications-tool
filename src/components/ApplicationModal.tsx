@@ -132,8 +132,10 @@ export function ApplicationModal({ open, onClose, onSave, initialData }: Props) 
               <input
                 value={form.salaire}
                 onChange={e => set('salaire', e.target.value)}
-                placeholder="ex : 55"
-                type="number"
+                placeholder="ex : 55 ou 45-50"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
                 className={inputClass}
               />
             </Field>
