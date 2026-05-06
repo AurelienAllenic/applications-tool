@@ -69,14 +69,26 @@ export const ALL_STATUSES: Status[] = [
   'Refusé',
 ]
 
+/** Contact / salaire quand l'utilisateur laisse la valeur par défaut */
+export const LIBELLE_NON_SPECIFIE = 'Non spécifié'
+
+/** Résumé carte & tableau : montants en k€, sans suffixe pour « Non spécifié ». */
+export function formatSalaireResume(raw: string): string {
+  const t = raw.trim()
+  if (!t) return '—'
+  const norm = t.replace(/\s+/g, ' ').toLowerCase()
+  if (norm === LIBELLE_NON_SPECIFIE.toLowerCase()) return LIBELLE_NON_SPECIFIE
+  return `${t} k€`
+}
+
 export const EMPTY_FORM: Omit<Application, 'id' | 'createdAt'> = {
   entreprise: '',
   poste: '',
-  localisation: '',
+  localisation: 'Paris',
   dateEnvoi: new Date().toISOString().split('T')[0],
   lienOffre: '',
-  contact: '',
-  salaire: '',
+  contact: LIBELLE_NON_SPECIFIE,
+  salaire: LIBELLE_NON_SPECIFIE,
   statut: 'En attente',
   dateRelance: '',
   commentaires: '',

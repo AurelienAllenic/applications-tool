@@ -1,4 +1,4 @@
-import { Application } from '../types'
+import { Application, formatSalaireResume } from '../types'
 import { StatusPicker } from './StatusPicker'
 import { Pencil, Trash2, ExternalLink, MapPin, Calendar, User, Euro, Bell } from 'lucide-react'
 
@@ -63,10 +63,10 @@ export function ApplicationCard({ app, onEdit, onDelete, onStatusChange }: Props
             <span className="truncate">{app.contact}</span>
           </span>
         )}
-        {app.salaire && (
-          <span className="flex items-center gap-1.5">
+        {app.salaire.trim() !== '' && (
+          <span className="flex items-center gap-1.5 min-w-0">
             <Euro size={11} className="shrink-0" />
-            {app.salaire}k€
+            <span>{formatSalaireResume(app.salaire)}</span>
           </span>
         )}
         {app.dateRelance && (
@@ -87,7 +87,7 @@ export function ApplicationCard({ app, onEdit, onDelete, onStatusChange }: Props
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#30363d]">
         <div className="relative">
-          <StatusPicker app={app} onStatusChange={onStatusChange} position="up" />
+          <StatusPicker app={app} onStatusChange={onStatusChange} />
         </div>
         {app.lienOffre && (
           <a

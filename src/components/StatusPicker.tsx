@@ -7,56 +7,55 @@ import { StatusBadge } from './StatusBadge'
 interface Props {
   app: Application
   onStatusChange: (id: string, status: Application['statut']) => void
-  position?: 'up' | 'down'
 }
 
-export function StatusPicker({ app, onStatusChange, position = 'down' }: Props) {
+export function StatusPicker({ app, onStatusChange }: Props) {
   const [open, setOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-
-  useEffect(() => {
-    if (open && isMobile) {
+    if (open) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
     }
     return () => { document.body.style.overflow = '' }
-  }, [open, isMobile])
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   const handlePick = (s: Application['statut']) => {
     onStatusChange(app.id, s)
     setOpen(false)
   }
 
-  // Mobile bottom-sheet : rendu via portal dans document.body
-  // → échappe au stacking context créé par transform des cartes animées
-  const mobileSheet = isMobile && open
+  // Toujours en portail : évite le clipping (table scroll, transform, overflow)
+  const modal = open
     ? createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex flex-col justify-end animate-fade-in"
+          className="fixed inset-0 z-[9999] flex flex-col justify-end md:justify-center md:items-center animate-fade-in"
           style={{ backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full bg-[#161b22] border-t border-[#30363d] rounded-t-2xl animate-slide-up"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+            className="w-full md:max-w-md bg-[#161b22] border border-[#30363d] rounded-t-2xl md:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1">
+            {/* Poignée — mobile seulement */}
+            <div className="flex justify-center pt-3 pb-1 md:hidden">
               <div className="w-10 h-1 rounded-full bg-[#484f58]" />
             </div>
 
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-[#30363d]">
               <div className="min-w-0 mr-3">
-                <p className="font-bold text-[#e6edf3] text-sm" style={{ fontFamily: 'Syne, sans-serif' }}>
+                <p className="font-bold text-[#e6edf3] text-sm md:text-base" style={{ fontFamily: 'Syne, sans-serif' }}>
                   Changer le statut
                 </p>
                 <p className="text-xs text-[#7d8590] mt-0.5 truncate">
@@ -66,24 +65,25 @@ export function StatusPicker({ app, onStatusChange, position = 'down' }: Props) 
               <button
                 onClick={() => setOpen(false)}
                 className="p-2 rounded-full bg-[#1e2530] text-[#7d8590] hover:text-[#e6edf3] shrink-0"
+                type="button"
               >
                 <X size={15} />
               </button>
             </div>
 
-            {/* Options */}
-            <div className="px-4 py-3 grid grid-cols-2 gap-2">
+            <div className="px-4 py-3 grid grid-cols-2 md:grid-cols-2 gap-2">
               {ALL_STATUSES.map(s => {
                 const cfg = STATUS_CONFIG[s]
                 const selected = app.statut === s
                 return (
                   <button
                     key={s}
+                    type="button"
                     onClick={() => handlePick(s)}
                     className={`flex items-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-medium text-left transition-all border active:scale-95 ${
                       selected
                         ? `${cfg.bg} ${cfg.color} shadow-sm`
-                        : 'border-[#30363d] text-[#7d8590]'
+                        : 'border-[#30363d] text-[#7d8590] hover:border-[#484f58] hover:text-[#e6edf3]'
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full shrink-0 ${selected ? cfg.dot : 'bg-[#484f58]'}`} />
@@ -100,8 +100,8 @@ export function StatusPicker({ app, onStatusChange, position = 'down' }: Props) 
 
   return (
     <>
-      {/* Trigger */}
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 hover:opacity-80 active:scale-95 transition-all"
       >
@@ -112,41 +112,7 @@ export function StatusPicker({ app, onStatusChange, position = 'down' }: Props) 
         />
       </button>
 
-      {/* Mobile bottom sheet (portal) */}
-      {mobileSheet}
-
-      {/* Desktop dropdown */}
-      {!isMobile && open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className={`absolute ${position === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 z-50 bg-[#1e2530] border border-[#30363d] rounded-xl shadow-2xl py-1.5 min-w-[190px] animate-scale-in`}
-          >
-            <p className="px-4 py-2 text-[10px] font-semibold text-[#7d8590] uppercase tracking-widest border-b border-[#30363d] mb-1">
-              Changer le statut
-            </p>
-            {ALL_STATUSES.map(s => {
-              const cfg = STATUS_CONFIG[s]
-              const selected = app.statut === s
-              return (
-                <button
-                  key={s}
-                  onClick={() => handlePick(s)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${
-                    selected
-                      ? `${cfg.color} bg-white/5 font-medium`
-                      : 'text-[#7d8590] hover:text-[#e6edf3] hover:bg-white/5'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${selected ? cfg.dot : 'bg-[#484f58]'}`} />
-                  {s}
-                  {selected && <span className="ml-auto text-[10px] opacity-60">✓</span>}
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
+      {modal}
     </>
   )
 }

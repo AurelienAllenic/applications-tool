@@ -1,4 +1,4 @@
-import { Application } from '../types'
+import { Application, formatSalaireResume } from '../types'
 import { StatusPicker } from './StatusPicker'
 import { Pencil, Trash2, ExternalLink } from 'lucide-react'
 
@@ -57,14 +57,14 @@ export function ApplicationTable({ applications, onEdit, onDelete, onStatusChang
               <td className="px-4 py-3 text-[#7d8590] whitespace-nowrap">{app.localisation || '—'}</td>
               <td className="px-4 py-3 text-[#7d8590] whitespace-nowrap">{fmt(app.dateEnvoi)}</td>
               <td className="px-4 py-3 text-[#7d8590] whitespace-nowrap">
-                {app.salaire ? `${app.salaire}k€` : '—'}
+                {formatSalaireResume(app.salaire)}
               </td>
               <td className="px-4 py-3 text-[#7d8590] whitespace-nowrap max-w-[120px]">
                 <span className="truncate block">{app.contact || '—'}</span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <div className="relative">
-                  <StatusPicker app={app} onStatusChange={onStatusChange} position="down" />
+                  <StatusPicker app={app} onStatusChange={onStatusChange} />
                 </div>
               </td>
               <td className="px-4 py-3 text-[#7d8590] whitespace-nowrap">{fmt(app.dateRelance)}</td>
